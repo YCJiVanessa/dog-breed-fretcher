@@ -24,12 +24,41 @@ public class DogApiBreedFetcher implements BreedFetcher {
      * @throws BreedNotFoundException if the breed does not exist (or if the API call fails for any reason)
      */
     @Override
-    public List<String> getSubBreeds(String breed) {
-        // TODO Task 1: Complete this method based on its provided documentation
-        //      and the documentation for the dog.ceo API. You may find it helpful
-        //      to refer to the examples of using OkHttpClient from the last lab,
-        //      as well as the code for parsing JSON responses.
-        // return statement included so that the starter code can compile and run.
-        return new ArrayList<>();
+    public List<String> getSubBreeds(String breed) throws BreedNotFoundException {
+        final String url = "https://dog.ceo/api/breed/" + breed.toLowerCase() + "/list";
+
+        // Create a request to API
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+        List<String> breedsList;
+
+        try {
+            // Get Response from the client
+            Response response = client.newCall(request).execute();
+            assert response.body() != null;
+            // Get string body of the response and Parse into JSON
+            String responseBody = response.body().string();
+            JSONObject Json_data = new JSONObject(responseBody);
+
+            breedsList = new ArrayList<>();
+
+            if (Objects.equals(Json_data.getString("status"), "success")) {
+                JSONArray sub_breeds = new JSONArray(Json_data.getJSONArray("message"));
+
+                for (int i = 0; i < sub_breeds.length(); i++) {
+                    String single_breed = sub_breeds.getString(i);
+                    breedsList.add(single_breed);
+                }
+
+            }
+            else {
+                throw new BreedNotFoundException("Failed to retrieve data from API" + breed);
+            }
+
+        } catch (IOException e) {
+            throw new BreedNotFoundException("Failed to fetch sub-breeds for " + breed);
+        }
+        return breedsList;
     }
 }
